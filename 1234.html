@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Attendance Management System</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#667085;
+    --primary:#315efb;--primary2:#6c63ff;--green:#16a34a;--red:#dc2626;
+    --border:#e5e7eb;--shadow:0 12px 35px rgba(31,41,55,.09)
+  }
+  body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:linear-gradient(135deg,#eef3ff,#f8fafc);color:var(--text)}
+  .container{width:min(1180px,94%);margin:32px auto 50px}
+  header{background:linear-gradient(135deg,#315efb,#6c63ff);color:white;padding:28px;border-radius:22px;box-shadow:var(--shadow);margin-bottom:22px}
+  header h1{margin:0 0 7px;font-size:clamp(25px,4vw,38px)}
+  header p{margin:0;opacity:.9}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:22px;align-items:start}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+  h2{font-size:19px;margin:0 0 16px}
+  label{display:block;font-size:13px;font-weight:700;margin:13px 0 7px;color:#344054}
+  input,select{width:100%;padding:12px 13px;border:1px solid #d0d5dd;border-radius:10px;outline:none;font-size:14px;background:#fff}
+  input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(49,94,251,.12)}
+  button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer;transition:.18s}
+  button:hover{transform:translateY(-1px)}
+  .primary{background:var(--primary);color:#fff;width:100%;margin-top:15px}
+  .secondary{background:#eef2ff;color:#315efb}
+  .danger{background:#fee2e2;color:#b91c1c}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+  .toolbar input{flex:1;min-width:180px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .stat{padding:15px;border:1px solid var(--border);border-radius:14px;background:#fafbff}
+  .stat small{display:block;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .stat strong{font-size:25px}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:690px}
+  th,td{padding:13px 11px;border-bottom:1px solid var(--border);text-align:left;font-size:14px}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#f8fafc}
+  .student-name{font-weight:750}.reg{color:var(--muted);font-size:12px}
+  .actions{display:flex;gap:7px;flex-wrap:wrap}
+  .att-btn{padding:8px 10px;font-size:12px}
+  .present{background:#dcfce7;color:#166534}.absent{background:#fee2e2;color:#991b1b}
+  .selected-present{outline:2px solid #16a34a}.selected-absent{outline:2px solid #dc2626}
+  .pill{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}
+  .good{background:#dcfce7;color:#166534}.warning{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}
+  .empty{text-align:center;padding:35px;color:var(--muted)}
+  .footer-note{margin-top:13px;color:var(--muted);font-size:12px}
+  .date-row{display:flex;gap:10px;align-items:end}.date-row>div{flex:1}
+  .date-row button{height:43px}
+  @media(max-width:850px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:480px){.container{width:92%;margin-top:18px}.card{padding:15px}.stats{gap:8px}.stat strong{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Student Attendance Management System</h1>
+    <p>Manage students, mark daily attendance, and track attendance percentage.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Add Student</h2>
+      <form id="studentForm">
+        <label for="studentName">Student Name</label>
+        <input id="studentName" required placeholder="e.g. Names of the Student">
+        <label for="registerNo">Register Number</label>
+        <input id="registerNo" required placeholder="e.g. 123456789">
+        <button class="primary" type="submit">+ Add Student</button>
+      </form>
+
+      <div class="date-row">
+        <div>
+          <label for="attendanceDate">Attendance Date</label>
+          <input id="attendanceDate" type="date">
+        </div>
+        <button class="secondary" id="todayBtn" type="button">Today</button>
+      </div>
+      <p class="footer-note">Data is saved automatically in this browser using localStorage.</p>
+    </section>
+
+    <section class="card">
+      <div class="stats">
+        <div class="stat"><small>Total Students</small><strong id="totalStudents">0</strong></div>
+        <div class="stat"><small>Present Today</small><strong id="presentToday">0</strong></div>
+        <div class="stat"><small>Absent Today</small><strong id="absentToday">0</strong></div>
+        <div class="stat"><small>Class Attendance</small><strong id="classPercentage">0%</strong></div>
+      </div>
+
+      <div class="toolbar">
+        <input id="search" placeholder="Search by name or register number...">
+        <button class="secondary" id="exportBtn" type="button">Export to Excel (CSV)</button>
+        <label class="secondary" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0;padding:11px 15px;border-radius:10px;font-weight:700;">
+          Import Excel (CSV)
+          <input id="importFile" type="file" accept=".csv,text/csv" style="display:none">
+        </label>
+        <button class="danger" id="clearBtn" type="button">Clear All</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Register No.</th>
+              <th>Today</th>
+              <th>Attendance</th>
+              <th>Percentage</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="studentTable"></tbody>
+        </table>
+        <div id="empty" class="empty">No students added yet.</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "studentAttendanceSystem_v1";
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"students":[]}');
+
+const $ = id => document.getElementById(id);
+const today = () => new Date().toISOString().slice(0,10);
+$("attendanceDate").value = today();
+
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function studentStats(student){
+  const records = Object.values(student.attendance || {});
+  const total = records.length;
+  const present = records.filter(x => x === "Present").length;
+  return {total, present, absent: total-present, pct: total ? (present/total)*100 : 0};
+}
+
+function pctClass(p){
+  return p >= 75 ? "good" : p >= 50 ? "warning" : "bad";
+}
+
+function render(){
+  const date = $("attendanceDate").value || today();
+  const query = $("search").value.trim().toLowerCase();
+  const students = state.students.filter(s =>
+    s.name.toLowerCase().includes(query) || s.reg.toLowerCase().includes(query)
+  );
+
+  $("totalStudents").textContent = state.students.length;
+  let present=0, absent=0, marked=0, classPct=0;
+  state.students.forEach(s=>{
+    const v=(s.attendance||{})[date];
+    if(v==="Present"){present++;marked++}
+    if(v==="Absent"){absent++;marked++}
+    const st=studentStats(s);
+    classPct += st.pct;
+  });
+  $("presentToday").textContent = present;
+  $("absentToday").textContent = absent;
+  $("classPercentage").textContent = state.students.length ? Math.round(classPct/state.students.length) + "%" : "0%";
+
+  $("studentTable").innerHTML = students.map(s=>{
+    const st=studentStats(s);
+    const status=(s.attendance||{})[date];
+    return `<tr>
+      <td><div class="student-name">${escapeHtml(s.name)}</div></td>
+      <td><span class="reg">${escapeHtml(s.reg)}</span></td>
+      <td>${status ? `<span class="pill ${status==="Present"?"good":"bad"}">${status}</span>` : `<span class="reg">Not marked</span>`}</td>
+      <td>
+        <div class="actions">
+          <button class="att-btn present ${status==="Present"?"selected-present":""}" onclick="mark('${s.id}','Present')">Present</button>
+          <button class="att-btn absent ${status==="Absent"?"selected-absent":""}" onclick="mark('${s.id}','Absent')">Absent</button>
+        </div>
+      </td>
+      <td><span class="pill ${pctClass(st.pct)}">${st.pct.toFixed(1)}%</span><div class="reg">${st.present}/${st.total} present</div></td>
+      <td><button class="att-btn danger" onclick="removeStudent('${s.id}')">Delete</button></td>
+    </tr>`;
+  }).join("");
+
+  $("empty").style.display = students.length ? "none" : "block";
+}
+
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+
+$("studentForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const name=$("studentName").value.trim(), reg=$("registerNo").value.trim();
+  if(!name || !reg) return;
+  if(state.students.some(s=>s.reg.toLowerCase()===reg.toLowerCase())){
+    alert("Register number already exists.");
+    return;
+  }
+  state.students.push({id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), name, reg, attendance:{}});
+  save(); e.target.reset(); render(); $("studentName").focus();
+});
+
+window.mark = function(id,status){
+  const date=$("attendanceDate").value || today();
+  const s=state.students.find(x=>x.id===id);
+  if(!s) return;
+  s.attendance=s.attendance||{};
+  s.attendance[date]=status;
+  save(); render();
+};
+
+window.removeStudent = function(id){
+  const s=state.students.find(x=>x.id===id);
+  if(!s) return;
+  if(confirm(`Delete ${s.name} and all attendance records?`)){
+    state.students=state.students.filter(x=>x.id!==id);
+    save(); render();
+  }
+};
+
+$("attendanceDate").addEventListener("change", render);
+$("search").addEventListener("input", render);
+$("todayBtn").addEventListener("click", ()=>{$("attendanceDate").value=today();render()});
+
+$("clearBtn").addEventListener("click", ()=>{
+  if(confirm("Delete all students and attendance data? This cannot be undone.")){
+    state={students:[]}; save(); render();
+  }
+});
+
+$("exportBtn").addEventListener("click", () => {
+  if (!state.students.length) {
+    alert("No students to export.");
+    return;
+  }
+
+  // Get unique sorted dates
+  const dates = [...new Set(state.students.flatMap(s => Object.keys(s.attendance || {})))].sort();
+  
+  // Define header
+  const header = [
+    "Student Name",
+    "Register Number",
+    ...dates.map(d => d + " Attendance"),
+    "Present",
+    "Total Marked",
+    "Percentage"
+  ];
+
+  // Format student rows
+  const rows = state.students.map(s => {
+    const st = studentStats(s);
+    return [
+      s.name,
+      s.reg,
+      ...dates.map(d => (s.attendance || {})[d] || ""),
+      st.present,
+      st.total,
+      st.pct.toFixed(1) + "%"
+    ];
+  });
+
+  // Convert to CSV format with proper line breaks
+  const csv = [header, ...rows]
+    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  // Create downloadable file with UTF-8 BOM for Excel
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "student-attendance.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$("importFile").addEventListener("change", async (e)=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const text=await file.text();
+  const lines=text.split(/\\r?\\n/).filter(Boolean);
+  if(lines.length<2){alert("The CSV file has no student records.");return}
+
+  const parseCSV = line => {
+    const out=[]; let cur="", quoted=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i], n=line[i+1];
+      if(c==='"' && quoted && n==='"'){cur+='"';i++;continue}
+      if(c==='"'){quoted=!quoted;continue}
+      if(c===',' && !quoted){out.push(cur);cur="";continue}
+      cur+=c;
+    }
+    out.push(cur); return out;
+  };
+
+  const header=parseCSV(lines[0]).map(x=>x.trim());
+  const nameIdx=header.findIndex(x=>x.toLowerCase()==="student name");
+  const regIdx=header.findIndex(x=>x.toLowerCase()==="register number");
+  if(nameIdx<0 || regIdx<0){
+    alert("Please use the exported CSV format. Required columns: Student Name and Register Number.");
+    e.target.value=""; return;
+  }
+
+  const imported=[];
+  for(let i=1;i<lines.length;i++){
+    const row=parseCSV(lines[i]);
+    const name=(row[nameIdx]||"").trim(), reg=(row[regIdx]||"").trim();
+    if(!name || !reg) continue;
+    const student={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now()+i)),name,reg,attendance:{}};
+    header.forEach((h,j)=>{
+      const m=h.match(/^(\\d{4}-\\d{2}-\\d{2}) Attendance$/);
+      if(m && row[j] && (row[j]==="Present" || row[j]==="Absent")) student.attendance[m[1]]=row[j];
+    });
+    imported.push(student);
+  }
+  if(imported.length){
+    state.students=imported;
+    save(); render();
+    alert(imported.length+" students imported successfully.");
+  }
+  e.target.value="";
+});
+
+render();
+</script>
+</body>
+</html>
